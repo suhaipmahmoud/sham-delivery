@@ -3,7 +3,7 @@ import pandas as pd
 import urllib.parse
 
 إعدادات الصفحة الأساسية
-st.set_page_config(page_title="منصة الشام المركزية للتوصيل", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="منصة الشام المركزية للتوصيل", page_icon="", layout="wide")
 
 st.markdown("""
 <style>
@@ -29,7 +29,7 @@ except Exception:
 return pd.DataFrame()
 
 إظهار مؤشر تحميل خفيف للمستخدم
-with st.spinner("🔄 جاري تأمين الاتصال بالسيرفر السحابي..."):
+with st.spinner(" جاري تأمين الاتصال بالسيرفر السحابي..."):
 df_orders = load_sheet_data("orders")
 df_users = load_sheet_data("users")
 df_settings = load_sheet_data("settings")
@@ -53,7 +53,7 @@ if 'username' not in st.session_state: st.session_state.username = ""
 if 'role' not in st.session_state: st.session_state.role = ""
 
 if not st.session_state.logged_in:
-st.title("🛡️ بوابة دخول منصة الشام المركزية")
+st.title(" بوابة دخول منصة الشام المركزية")
 
 tab1, tab2 = st.tabs(["🔑 تسجيل الدخول", "📝 إنشاء حساب جديد"])
 
