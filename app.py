@@ -132,12 +132,21 @@ if st.session_state.logged_in:
             st.text_area("انسخ لصفحة settings:", value=f"{n}\t{m}\t{f}\t{admin_comm}")
             
         with tab2:
-            selected_user = st.selectbox("اختر مستخدم:", df_users['username'].unique())
-            user_data = df_users[df_users['username'] == selected_user].iloc[0]
-            new_pass = st.text_input("كلمة السر الجديدة", value=str(user_data['password']))
-            new_status = st.selectbox("الحالة", ["نشط", "منتهي"], index=0 if str(user_data['status']).strip() == "نشط" else 1)
-            mod_text = f"{selected_user}\t{new_pass}\t{user_data['role']}\t{user_data.get('brand_name','')}\t{user_data.get('address','')}\t{user_data.get('phone','')}\t{new_status}"
-            st.text_area("انسخ لصفحة users:", value=mod_text)
+            st.subheader("إدارة المستخدمين")
+            # كود الفحص المضاف لتجنب الانهيار
+            if not df_users.empty and 'username' in df_users.columns and len(df_users['username'].dropna()) > 0:
+                user_list = df_users['username'].dropna().unique()
+                selected_user = st.selectbox("اختر مستخدم:", user_list)
+                user_data = df_users[df_users['username'] == selected_user].iloc[0]
+                
+                new_pass = st.text_input("كلمة السر الجديدة", value=str(user_data['password']))
+                current_status = user_data.get('status', 'نشط')
+                new_status = st.selectbox("الحالة", ["نشط", "منتهي"], index=0 if str(current_status).strip() == "نشط" else 1)
+                
+                mod_text = f"{selected_user}\t{new_pass}\t{user_data['role']}\t{user_data.get('brand_name','')}\t{user_data.get('address','')}\t{user_data.get('phone','')}\t{new_status}"
+                st.text_area("انسخ السطر المحدث:", value=mod_text)
+            else:
+                st.warning("الجدول فارغ! يرجى إضافة سطر واحد على الأقل في شيت users لكي يتمكن النظام من العمل.")
 
         with tab3:
             st.write("استخدم أزرار الواتساب لتوجيه الطلبات.")
