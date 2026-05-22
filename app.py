@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
-# إعدادات الصفحة الأساسية بدون رموز معقدة
+# إعدادات الصفحة الأساسية
 st.set_page_config(page_title="منصة الشام المركزية للتوصيل", layout="wide")
 
 st.markdown("""
@@ -15,8 +15,8 @@ div.stButton > button:first-child { width: 100%; }
 # معرف ملف الجوجل شيت الخاص بك للربط المباشر
 SHEET_ID = "1XrxH5YCJT7NorMSBgNWS3Ieda0L5V75c64ClUsj__uI"
 
-# دالة ذكية ومحصنة لجلب البيانات بصيغة CSV مع حماية ضد بطء الإنترنت
-@st.cache_data(ttl=10) 
+# دالة جلب البيانات
+@st.cache_data(ttl=10)
 def load_sheet_data(sheet_name):
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     try:
@@ -26,13 +26,13 @@ def load_sheet_data(sheet_name):
     except Exception:
         return pd.DataFrame()
 
-# إظهار مؤشر تحميل خفيف للمستخدم
+# تحميل البيانات
 with st.spinner("جاري تأمين الاتصال بالسيرفر السحابي..."):
     df_orders = load_sheet_data("orders")
     df_users = load_sheet_data("users")
     df_settings = load_sheet_data("settings")
 
-# تهيئة أسعار التوصيل الافتراضية محلياً لحماية النظام عند انقطاع النت
+# تهيئة أسعار التوصيل الافتراضية
 near_p, med_p, far_p, admin_comm = 15000, 25000, 40000, 20
 if not df_settings.empty and len(df_settings) > 0:
     try:
@@ -43,14 +43,13 @@ if not df_settings.empty and len(df_settings) > 0:
     except Exception:
         pass
 
-# نظام الجلسات وحماية الحسابات
+# نظام الجلسات
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
 if 'role' not in st.session_state: st.session_state.role = ""
 
 if not st.session_state.logged_in:
     st.title("بوابة دخول منصة الشام المركزية")
-
     tab1, tab2 = st.tabs(["تسجيل الدخول", "إنشاء حساب جديد"])
 
     with tab1:
@@ -87,30 +86,58 @@ if not st.session_state.logged_in:
         user_type = st.selectbox("نوع الصلاحية", ["عميل (صاحب مشروع)", "مندوب توصيل"])
         b_name = st.text_input("اسم البراند") if user_type == "عميل (صاحب مشروع)" else ""
         b_phone = st.text_input("رقم الموبايل")
-        
-        if st.button("توليد سطر التفعيل"):
-            user_row_text = f"{new_u}\t{new_p}\t{user_type}\t{b_name}\t...\t{b_phone}\tنشط"
-            st.text_area("انسخ هذا السطر وضعه في صفحة users:", value=user_row_text)
+        b_addr = st.text_input("العنوان")
 
-# شريط التحكم الجانبي
+        if st.button("إرسال طلب الإنشاء"):
+            if new_u and new_p and b_phone:
+                user_row_text = f"{new_u}\t{new_p}\t{user_type}\t{b_name}\t{b_addr}\t{b_phone}\tنشط"
+                st.text_area("انسخ السطر التالي وضعه في صفحة users:", value=user_row_text)
+            else:
+                st.error("يرجى ملء الحقول.")
+
+# شريط التحكم
 if st.session_state.logged_in:
     st.sidebar.markdown(f"الحساب: {st.session_state.username}")
+    st.sidebar.markdown(f"الرتبة: {st.session_state.role}")
     if st.sidebar.button("تسجيل الخروج"):
         st.session_state.logged_in = False
         st.rerun()
 
-    # لوحات التحكم
     if st.session_state.role == "عميل (صاحب مشروع)":
-        st.header("لوحة تحكم العميل")
-        c_name = st.text_input("اسم المستلم")
+        st.header("لوحة تحكم المنتج")
+        c_name = st.text_input("اسم الزبون")
+        c_phone = st.text_input("رقم الموبايل")
+        regions = {"قريب": near_p, "متوسط": med_p, "أطراف": far_p}
+        sel_region = st.selectbox("المنطقة", list(regions.keys()))
+        c_addr = st.text_input("العنوان")
+        p_details = st.text_input("تفاصيل المنتج")
         p_price = st.number_input("حق المنتج", min_value=0)
-        if st.button("توليد طلب"):
-            st.text_area("انسخ السطر لصفحة orders:", value=f"تلقائي\t{st.session_state.username}\t{c_name}\t...")
-    
+        
+        if st.button("توليد الطلب"):
+            order_row_text = f"تلقائي\t{st.session_state.username}\t{c_name}\t{c_phone}\t{sel_region}\t{c_addr}\t{p_details}\t{p_price}\t{regions[sel_region]}\tقيد الانتظار\tلم يحدد"
+            st.text_area("انسخ لصفحة orders:", value=order_row_text)
+
     elif st.session_state.role == "مندوب توصيل":
         st.header("لوحة الكابتن")
         st.dataframe(df_orders)
 
     elif st.session_state.role == "الإدارة":
         st.header("لوحة الإدارة المركزية")
-        # بقية كود الإدارة هنا مع التأكد من خلوه من أي رموز خاصة خارج التنصيص
+        tab1, tab2, tab3 = st.tabs(["إعدادات الأسعار", "إدارة المستخدمين", "توجيه الطلبات"])
+        
+        with tab1:
+            n = st.number_input("سعر القريب", value=int(near_p))
+            m = st.number_input("سعر المتوسط", value=int(med_p))
+            f = st.number_input("سعر الأطراف", value=int(far_p))
+            st.text_area("انسخ لصفحة settings:", value=f"{n}\t{m}\t{f}\t{admin_comm}")
+            
+        with tab2:
+            selected_user = st.selectbox("اختر مستخدم:", df_users['username'].unique())
+            user_data = df_users[df_users['username'] == selected_user].iloc[0]
+            new_pass = st.text_input("كلمة السر الجديدة", value=str(user_data['password']))
+            new_status = st.selectbox("الحالة", ["نشط", "منتهي"], index=0 if str(user_data['status']).strip() == "نشط" else 1)
+            mod_text = f"{selected_user}\t{new_pass}\t{user_data['role']}\t{user_data.get('brand_name','')}\t{user_data.get('address','')}\t{user_data.get('phone','')}\t{new_status}"
+            st.text_area("انسخ لصفحة users:", value=mod_text)
+
+        with tab3:
+            st.write("استخدم أزرار الواتساب لتوجيه الطلبات.")
