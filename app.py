@@ -3,7 +3,7 @@ import pandas as pd
 import urllib.parse
 
 إعدادات الصفحة الأساسية
-st.set_page_config(page_title="منصة الشام المركزية للتوصيل", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="منصة الشام المركزية للتوصيل", page_icon="", layout="wide")
 
 st.markdown("""
 <style>
