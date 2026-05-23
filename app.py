@@ -15,13 +15,14 @@ div.stButton > button:first-child { width: 100%; }
 # معرف ملف الجوجل شيت الخاص بك للربط المباشر
 SHEET_ID = "1XrxH5YCJT7NorMSBgNWS3Ieda0L5V75c64ClUsj__uI"
 
-# دالة جلب البيانات
-@st.cache_data(ttl=10)
+# دالة جلب البيانات (معدلة لتكون غير قابلة للكسر)
+@st.cache_data(ttl=0) 
 def load_sheet_data(sheet_name):
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     try:
-        df = pd.read_csv(url, timeout=5)
-        df.columns = [c.strip() for c in df.columns]
+        df = pd.read_csv(url)
+        # تنظيف عميق لأسماء الأعمدة لضمان مطابقتها للكود
+        df.columns = [str(c).strip().replace('\xa0', '') for c in df.columns]
         return df
     except Exception:
         return pd.DataFrame()
@@ -133,7 +134,6 @@ if st.session_state.logged_in:
             
         with tab2:
             st.subheader("إدارة المستخدمين")
-            # كود الفحص المضاف لتجنب الانهيار
             if not df_users.empty and 'username' in df_users.columns and len(df_users['username'].dropna()) > 0:
                 user_list = df_users['username'].dropna().unique()
                 selected_user = st.selectbox("اختر مستخدم:", user_list)
